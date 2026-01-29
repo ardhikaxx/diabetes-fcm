@@ -1,0 +1,32 @@
+data:
+  path: "data/raw/diabetes.csv"
+  test_size: 0.2
+  validation_size: 0.1
+  random_state: 42
+  
+fcm:
+  n_clusters: 4
+  m: 2.0
+  max_iter: 100
+  error: 0.005
+  
+model:
+  input_dim: 11
+  hidden_dim: 64
+  output_dim: 2
+  learning_rate: 0.001
+  batch_size: 32
+  epochs: 200
+  early_stopping_patience: 20
+  l2_reg: 0.001
+  
+training:
+  use_cuda: true
+  save_path: "models/"
+  results_path: "results/"
+  
+regularization:
+  dropout_rate: 0.3
+  batch_norm: true
+  use_weight_decay: true
+  use_early_stopping: true
