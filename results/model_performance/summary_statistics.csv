@@ -3,7 +3,7 @@ Total Patients,768
 Diabetic Patients,268 (34.9%)
 Healthy Patients,500 (65.1%)
 FCM Clusters,4
-Best Validation Accuracy,88.31%
-Test Accuracy,84.42%
-Test AUC,0.9165
+Best Validation Accuracy,84.42%
+Test Accuracy,87.01%
+Test AUC,0.9209
 Model Parameters,"3,690"

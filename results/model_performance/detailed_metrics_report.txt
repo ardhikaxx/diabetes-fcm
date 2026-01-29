@@ -1,27 +1,27 @@
               precision    recall  f1-score   support
 
-     Healthy       0.93      0.82      0.87       100
-    Diabetic       0.73      0.89      0.80        54
+     Healthy       0.91      0.89      0.90       100
+    Diabetic       0.80      0.83      0.82        54
 
-    accuracy                           0.84       154
-   macro avg       0.83      0.85      0.84       154
-weighted avg       0.86      0.84      0.85       154
+    accuracy                           0.87       154
+   macro avg       0.86      0.86      0.86       154
+weighted avg       0.87      0.87      0.87       154
 
 ==================================================
 Model Performance Summary
 ==================================================
 Total Samples: 154
-Accuracy: 84.42%
-AUC Score: 0.9165
+Accuracy: 87.01%
+AUC Score: 0.9209
 
 Confusion Matrix:
-True Negatives: 82
-False Positives: 18
-False Negatives: 6
-True Positives: 48
+True Negatives: 89
+False Positives: 11
+False Negatives: 9
+True Positives: 45
 
 Additional Metrics:
-Precision: 0.7273
-Recall/Sensitivity: 0.8889
-F1-Score: 0.8000
-Specificity: 0.8200
+Precision: 0.8036
+Recall/Sensitivity: 0.8333
+F1-Score: 0.8182
+Specificity: 0.8900

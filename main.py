@@ -22,7 +22,6 @@ def main():
     Path("results/model_performance").mkdir(parents=True, exist_ok=True)
     Path("results/severity_analysis").mkdir(parents=True, exist_ok=True)
     
-    # Load config
     with open('config.yaml', 'r') as f:
         config = yaml.safe_load(f)
     
