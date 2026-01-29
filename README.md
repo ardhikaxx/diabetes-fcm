@@ -1,151 +1,178 @@
-# Diabetes Severity Classification menggunakan Fuzzy C-Means dan Neural Network
+# 🚑 Diabetes Severity Classification — Fuzzy C-Means + Neural Network
 
-## Ringkasan Singkat
-Proyek ini menggabungkan Fuzzy C-Means (FCM) untuk clustering kelembaman (soft clustering) dengan model Neural Network berbasis PyTorch untuk melakukan klasifikasi dan penilaian tingkat keparahan diabetes pasien. Hasilnya berupa derajat keanggotaan fuzzy untuk setiap cluster, skor severity kontinu, serta analisis performa model dan profil pasien yang komprehensif.
+[![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-brightgreen)](#license)
+[![Status](https://img.shields.io/badge/status-Experimental-yellowgreen)](#overview)
 
-## Kegunaan, Fungsi, dan Manfaat
-- Kegunaan: Menentukan kategori severity (derajat keparahan) pada pasien berdasarkan fitur klinis (mis. Glucose, BMI, Age) dengan pendekatan fuzzy + supervised learning.
-- Fungsi utama:
-  - Pra-pemrosesan data (normalisasi, pembagian dataset).
-  - Clustering Fuzzy C-Means untuk menghasilkan membership fuzzy dan pusat cluster.
-  - Pelatihan model Neural Network yang output-nya diinterpretasikan sebagai membership soft (softmax).
-  - Penghitungan skor severity dari membership (baik FCM maupun NN).
-  - Evaluasi performa (accuracy, AUC, confusion matrix, laporan metrik).
-  - Eksport hasil (CSV, gambar, laporan teks) dan pembuatan profil pasien.
-- Manfaat:
-  - Memberikan estimasi risiko yang lebih halus (bukan sekadar biner).
-  - Memungkinkan interpretasi pasien melalui membership ke beberapa cluster.
-  - Analisis performa yang lengkap untuk pengambilan keputusan klinis atau penelitian lanjutan.
+> "Menggabungkan kekuatan Fuzzy C-Means (soft clustering) dengan Neural Network untuk menilai derajat keparahan diabetes secara kontinu — bukan sekedar biner."
 
-## Struktur Proyek (peta folder utama)
-- main.py                     -> Orkestrasi pipeline (pra-proses, FCM, pelatihan, evaluasi, analisis)
-- config.yaml                 -> Konfigurasi eksperimen (path data, hyperparameter FCM dan model)
-- src/
-  - data_preprocessing.py     -> Kelas DiabetesDataPreprocessor (load, preprocess, split, save scaler)
-  - fcm_clustering.py         -> Kelas FuzzyCMeans (fit, predict_cluster, calculate_severity_scores, visualize, save_centers)
-  - torch_model.py            -> Definisi model PyTorch (EnhancedDiabetesClassifier) dan loss (RegularizedFuzzyLoss, FocalLoss)
-  - train.py                  -> EnhancedModelTrainer (dataloader, training loop, evaluasi, plotting, laporan)
-- data/
-  - processed/                -> Data yang sudah di-normalisasi (disimpan oleh pipeline)
-- models/                     -> Salinan model terlatih (disimpan saat training)
-- results/
-  - fcm_results/              -> Hasil cluster FCM (cluster assignments, visualisasi)
-  - model_performance/        -> Training history, confusion matrix, ROC, detailed_metrics_report.txt, metrics_report.txt
-  - severity_analysis/        -> comprehensive_patient_profiles.csv dan analisis severity lainnya
+---
 
-> Contoh file keluaran yang ada di repository:
-> - results/model_performance/detailed_metrics_report.txt (mengandung precision/recall/f1, accuracy, AUC, confusion matrix)
-> - results/fcm_results/cluster_assignments.csv
-> - results/severity_analysis/comprehensive_patient_profiles.csv
+## 📌 Daftar Isi
+- [Overview](#overview)  
+- [Kenapa Pendekatan Ini?](#kenapa-pendekatan-ini)  
+- [Fitur Utama](#fitur-utama)  
+- [Demo Visual (Contoh Output)](#demo-visual-contoh-output)  
+- [Struktur Proyek](#struktur-proyek)  
+- [Persiapan & Quick Start](#persiapan--quick-start)  
+- [Contoh config.yaml](#contoh-configyaml)  
+- [Alur Eksekusi (Step-by-step)](#alur-eksekusi-step-by-step)  
+- [Tips Praktis](#tips-praktis)  
+- [Kontribusi & Lisensi](#kontribusi--lisensi)
 
-## Penjelasan Fungsi Modul (singkat)
-- DiabetesDataPreprocessor (src/data_preprocessing.py)
-  - load_data(): Membaca CSV dari path di `config.yaml`, menampilkan shape dan distribusi kelas.
-  - preprocess(): Normalisasi/scaling, pembuatan fitur tambahan jika ada.
-  - split_data(): Membagi data menjadi train/val/test stratified.
-  - save_scaler(): Menyimpan objek scaler ke disk.
-- FuzzyCMeans (src/fcm_clustering.py)
-  - fit(X_train): Menjalankan FCM pada data training, mengembalikan pusat cluster dan matrix membership.
-  - predict_cluster(X): Menghitung membership untuk data baru (val/test).
-  - calculate_severity_scores(membership): Mengkonversi membership menjadi skor severity (mis. bobot cluster -> normalisasi ke [0,1]).
-  - visualize_clusters(...): Membuat plot cluster (jika memungkinkan) dan menyimpannya ke `results/fcm_results`.
-  - save_centers(): Menyimpan pusat cluster ke disk.
-- EnhancedDiabetesClassifier, RegularizedFuzzyLoss, FocalLoss (src/torch_model.py)
-  - Model NN dengan beberapa blok, batchnorm, inisialisasi bobot, dan fungsi forward yang mengeluarkan logits membership.
-  - predict_with_softmax(x): Menghasilkan membership (softmax) untuk input.
-  - Loss khusus menggabungkan regularisasi fuzzy dan focal loss untuk menekan overfitting dan menangani imbalance.
-- EnhancedModelTrainer (src/train.py)
-  - prepare_dataloaders(...): Membuat DataLoader PyTorch, memperhitungkan sample weighting bila imbalance.
-  - train(...): Loop training dengan validasi, early stopping, menyimpan model terbaik.
-  - evaluate(...): Menghitung metrik di test set, menghasilkan probabilitas, prediksi.
-  - plot_confusion_matrix(), plot_roc_curve(), plot_training_history(): Menyimpan grafik evaluasi.
-  - generate_detailed_report(): Menulis laporan metrik ke `results/model_performance/detailed_metrics_report.txt`.
+---
 
-## Alur / Step-by-step (sesuai main.py)
-1. Persiapan folder
-   - `main.py` membuat folder yang diperlukan: `data/processed`, `models`, `results/fcm_results`, `results/model_performance`, `results/severity_analysis`.
-2. Load konfigurasi
-   - Membaca `config.yaml` (parameter FCM, model, path data, dsb).
-3. Step 1 — Data Preprocessing
-   - Load dataset dari `config.yaml`.
-   - Cek missing values, cek distribusi kelas.
-   - Normalisasi fitur (StandardScaler) -> disimpan ke `data/processed/normalized_data.csv`.
-   - Split data ke train/val/test (stratified).
-   - Simpan scaler untuk penggunaan inferensi nanti.
-4. Step 2 — Fuzzy C-Means (FCM)
-   - Jalankan FCM pada data training (`fcm.fit(X_train)`), dapatkan `centers` dan `membership`.
-   - Hitung severity scores untuk training (`calculate_severity_scores`).
-   - Simpan hasil cluster di `results/fcm_results/cluster_assignments.csv`.
-   - (Opsional) Visualisasi cluster disimpan di `results/fcm_results/`.
-5. Step 3 — Prediksi membership FCM untuk validation & test
-   - Hitung membership untuk X_val dan X_test (`predict_cluster`).
-   - Hitung severity untuk val & test.
-6. Step 4 — Persiapan dan Pelatihan NN (Enhanced)
-   - Buat dataloader yang menggabungkan fitur X dan membership FCM bila digunakan.
-   - Inisialisasi model `EnhancedDiabetesClassifier` (output dim = jumlah cluster FCM).
-   - Latih model dengan `EnhancedModelTrainer.train()`, gunakan teknik anti-overfitting (regularisasi, weighted sampling, focal loss, dsb).
-   - Simpan model terbaik ke folder `models/`.
-7. Step 5 — Evaluasi Model
-   - Hitung prediksi, probabilitas, metrik: accuracy, AUC, precision/recall/f1.
-   - Simpan plot training history, confusion matrix, ROC curve di `results/model_performance/`.
-   - Tulis laporan metrik di `results/model_performance/detailed_metrics_report.txt`.
-8. Step 6 — Analisis Severity dan Profil Pasien
-   - Untuk seluruh pasien (train+val+test), ambil prediksi membership NN dan skor severity NN.
-   - Gabungkan dengan membership FCM dan skor severity FCM.
-   - Klasifikasikan kategori risiko (Low, Medium, High, Critical) berdasarkan bins skor.
-   - Simpan `comprehensive_patient_profiles.csv` ke `results/severity_analysis/`.
-9. Step 7 — Ringkasan Akhir
-   - Tampilkan ringkasan jumlah pasien, proporsi diabetic/healthy, jumlah cluster FCM, metrik terbaik, dsb.
-   - Contoh hasil yang ditemukan di repo: Accuracy sekitar 84.4%, AUC ~0.9165 (lihat `detailed_metrics_report.txt`).
+## Overview
+Proyek ini melakukan:
+- Pra-pemrosesan data klinis,
+- Clustering Fuzzy C-Means untuk menghasilkan membership fuzzy dan skor severity,
+- Pelatihan Neural Network (PyTorch) yang memanfaatkan membership sebagai sinyal/target fuzzy,
+- Evaluasi menyeluruh dan pembuatan profil pasien.
 
-## Cara Install & Menjalankan (contoh)
-1. Clone repo
-   - git clone https://github.com/ardhikaxx/diabetes-fcm.git
-   - cd diabetes-fcm
-2. (Disarankan) Buat virtual environment
-   - python -m venv .venv
-   - source .venv/bin/activate  (Linux/macOS) atau .venv\Scripts\activate (Windows)
-3. Install dependency (contoh umum)
-   - pip install -r requirements.txt
-   Jika file requirements.txt tidak tersedia, install paket minimal:
-   - pip install numpy pandas scikit-learn matplotlib seaborn pyyaml torch tqdm
-4. Siapkan file konfigurasi `config.yaml`
-   - Pastikan `data.path` menunjuk ke dataset CSV (contoh: dataset diabetes dengan kolom `Outcome`, `Glucose`, `BMI`, `Age`, dsb.)
-   - Contoh parameter penting:
-     - fcm:
-       - n_clusters: 3
-       - m: 2.0
-       - max_iter: 150
-       - error: 1e-5
-     - model:
-       - hidden_dim: 64
-       - learning_rate: 0.001
-       - epochs: 100
-5. Jalankan pipeline utama
-   - python main.py
-   - Program akan menjalankan seluruh pipeline (preprocessing -> FCM -> training NN -> evaluasi -> analisis severity) dan menyimpan hasil di folder `results/` dan `models/`.
+Output utama: model terlatih, file CSV profil pasien, visualisasi cluster, grafik performa, dan laporan metrik teks.
 
-## Konfigurasi (ringkasan)
-- `config.yaml` mengendalikan:
-  - Path dataset (data.path)
-  - Hyperparameter FCM (n_clusters, m, max_iter, error)
-  - Hyperparameter model (hidden_dim, learning_rate, batch_size, epochs)
-  - Opsi training dan regularisasi
-- Ubah parameter di `config.yaml` untuk eksperimen (mis. lebih banyak cluster, ubah ukuran hidden, dsb).
+---
 
-## Output yang Diharapkan & Letak File
-- data/processed/normalized_data.csv
-- results/fcm_results/cluster_assignments.csv
-- results/fcm_results/cluster_visualization.png (jika berhasil)
-- models/* (model terlatih disimpan di folder ini)
-- results/model_performance/training_history.png
+## Kenapa Pendekatan Ini?
+- FCM memberikan derajat keanggotaan (soft) sehingga pasien dapat memiliki tingkat risiko gradien, bukan kategori kaku.
+- Neural Network belajar memetakan fitur pasien ke membership yang stabil dan dapat digabungkan dengan hasil FCM untuk analisis severity.
+- Regularisasi khusus dan teknik anti-overfitting diterapkan agar model lebih robust pada data klinis yang seringkali tidak seimbang.
+
+---
+
+## Fitur Utama
+- Pra-pemrosesan otomatis dan scaling.
+- Implementasi Fuzzy C-Means (fit, predict, visualisasi).
+- Enhanced Neural Network dengan BatchNorm, Dropout, inisialisasi bobot, dan Regularized Fuzzy Loss.
+- Early stopping, scheduler, dan opsi Focal Loss untuk imbalance.
+- Laporan metrik lengkap: accuracy, AUC, precision/recall/f1, confusion matrix.
+- Comprehensive patient profiles (FCM + NN membership & severity).
+
+---
+
+## Demo Visual (Contoh Output)
+Gambar dihasilkan pada folder `results/` saat pipeline dijalankan:
+- results/fcm_results/cluster_visualization.png
 - results/model_performance/confusion_matrix.png
 - results/model_performance/roc_curve.png
-- results/model_performance/detailed_metrics_report.txt
-- results/severity_analysis/comprehensive_patient_profiles.csv
+- results/model_performance/training_history.png
 
-## Catatan Praktis & Tips
-- Pastikan dataset memiliki kolom `Outcome` sebagai label biner (0 = healthy, 1 = diabetic).
-- Jika dataset imbalance, trainer sudah menggunakan teknik weighted sampling dan focal loss untuk membantu.
-- Visualisasi cluster kadang memerlukan reduksi dimensi — jika fitur banyak, fungsi visualize mungkin gagal; handling pengecualian sudah ada di `main.py`.
-- Simpan konfigurasi eksperimen dan versi model agar hasil dapat direproduksi.
+Contoh:  
+![Cluster Visualization](results/fcm_results/cluster_visualization.png)  
+> (Jika menjalankan di lingkungan lokal, buka file di path tersebut untuk melihat hasil)
+
+---
+
+## Struktur Proyek (ringkasan)
+- main.py — Orkestrator pipeline  
+- config.yaml — Konfigurasi eksperimen  
+- src/
+  - data_preprocessing.py — Preprocessing & split
+  - fcm_clustering.py — FCM implementation
+  - torch_model.py — Model, loss functions
+  - train.py — Trainer, evaluation, plotting
+- data/processed/ — Data terproses
+- models/ — Model tersimpan
+- results/ — Semua output analisis & grafik
+
+---
+
+## Persiapan & Quick Start
+
+1. Clone repository:
+```bash
+git clone https://github.com/ardhikaxx/diabetes-fcm.git
+cd diabetes-fcm
+```
+
+2. (Disarankan) Buat virtual environment:
+```bash
+python -m venv .venv
+# Linux / macOS
+source .venv/bin/activate
+# Windows
+.venv\Scripts\activate
+```
+
+3. Install dependensi:
+```bash
+pip install -r requirements.txt
+```
+Jika belum ada `requirements.txt`, install minimal:
+```bash
+pip install numpy pandas scikit-learn matplotlib seaborn pyyaml torch tqdm
+```
+
+4. Siapkan `config.yaml` (contoh di bawah). Pastikan `data.path` menunjuk ke CSV dataset yang memiliki kolom `Outcome`.
+
+5. Jalankan pipeline utama:
+```bash
+python main.py
+```
+
+Hasil akan tersimpan di folder `results/` dan model di `models/`.
+
+---
+
+## Contoh config.yaml
+Salin contoh ini ke `config.yaml` dan sesuaikan path/parameter sesuai kebutuhan:
+```yaml
+data:
+  path: "data/diabetes.csv"
+
+fcm:
+  n_clusters: 4
+  m: 2.0
+  max_iter: 150
+  error: 1e-5
+
+model:
+  hidden_dim: 64
+  learning_rate: 0.001
+  batch_size: 32
+  epochs: 100
+  l2_reg: 0.001
+
+regularization:
+  dropout_rate: 0.3
+  use_weight_decay: true
+```
+
+---
+
+## Alur Eksekusi (Step-by-step)
+1. main.py membuat direktori hasil (data/processed, models, results/...).  
+2. Data dibaca dari path di `config.yaml`, dicek missing values & distribusi kelas.  
+3. Data diskalakan (StandardScaler) → disimpan `data/processed/normalized_data.csv`.  
+4. FCM dijalankan pada training set → centers & membership disimpan.  
+5. Membership FCM diprediksi untuk val/test → skor severity dihitung.  
+6. Dataloader dibuat (menggabungkan fitur & membership bila diperlukan).  
+7. Model NN dilatih (loss ter-regulasi, scheduler, early stopping).  
+8. Evaluasi: confusion matrix, ROC, training history, laporan metrik.  
+9. Severity analysis dibuat untuk semua pasien → `comprehensive_patient_profiles.csv`.
+
+---
+
+## Hasil & Metrik (Contoh dari repo)
+Lihat `results/model_performance/detailed_metrics_report.txt` untuk detail metrik. Contoh ringkasan yang ditemukan:
+- Accuracy: ~84.42%  
+- AUC: ~0.9165  
+- Precision/Recall/F1 per kelas (disimpan di laporan teks).
+
+---
+
+## Tips Praktis
+- Pastikan dataset mengandung kolom: minimal `Glucose`, `BMI`, `Age`, `Outcome`.
+- Gunakan `n_clusters` FCM yang masuk akal (3–5) tergantung granularitas severity yang diinginkan.
+- Aktifkan weighted sampling dan/atau FocalLoss jika dataset sangat imbalance.
+- Simpan `config.yaml` untuk melacak eksperimen.
+
+---
+
+## Kontribusi
+Terima kasih atas kontribusi! Silakan buka issue atau pull request. Bila menambah fitur, sertakan:
+- Deskripsi fitur & alasan,
+- Contoh perubahan config,
+- Output contoh (jika ada).
+
+---
